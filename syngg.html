@@ -1,0 +1,322 @@
+<!DOCTYPE html>  
+<html lang="id">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Aplikasi Penyimpanan Gambar</title>  
+    <style>  
+        body {  
+            font-family: Arial, sans-serif;  
+            margin: 0;  
+            padding: 0;  
+            background-color: #f4f4f4;  
+        }  
+        .container {  
+            max-width: 800px;  
+            margin: 50px auto;  
+            background-color: #fff;  
+            padding: 20px;  
+            border-radius: 8px;  
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);  
+        }  
+        .upload-btn {  
+            background-color: #4CAF50;  
+            color: white;  
+            border: none;  
+            padding: 10px 20px;  
+            text-align: center;  
+            font-size: 16px;  
+            cursor: pointer;  
+            border-radius: 4px;  
+            margin-top: 20px;  
+        }  
+        .gallery {  
+            display: flex;  
+            flex-wrap: wrap;  
+            gap: 10px;  
+            margin-top: 20px;  
+        }  
+        .gallery img {  
+            max-width: 200px;  
+            max-height: 200px;  
+            border-radius: 8px;  
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);  
+            cursor: pointer;  
+        }  
+        .menu {  
+            background-color: #333;  
+            color: white;  
+            padding: 10px;  
+            text-align: center;  
+        }  
+        .menu a {  
+            color: white;  
+            text-decoration: none;  
+            margin: 0 15px;  
+            font-size: 18px;  
+        }  
+        .menu a:hover {  
+            text-decoration: underline;  
+        }  
+        .full-screen-container {  
+            display: none;  
+            position: fixed;  
+            top: 0;  
+            left: 0;  
+            right: 0;  
+            bottom: 0;  
+            background-color: rgba(0, 0, 0, 0.8);  
+            justify-content: center;  
+            align-items: center;  
+            z-index: 1000;  
+            overflow: hidden;  
+        }  
+        .full-screen-container img {  
+            width: 100%;  
+            height: auto;  
+            object-fit: contain;  
+        }  
+        .full-screen-container .close-btn {  
+            position: absolute;  
+            top: 10px;  
+            right: 10px;  
+            background-color: #fff;  
+            border: none;  
+            font-size: 20px;  
+            padding: 5px 10px;  
+            cursor: pointer;  
+        }  
+        .full-screen-container .prev-btn, .full-screen-container .next-btn {  
+            position: absolute;  
+            top: 50%;  
+            font-size: 30px;  
+            color: white;  
+            background-color: transparent;  
+            border: none;  
+            cursor: pointer;  
+            padding: 10px;  
+        }  
+        .full-screen-container .prev-btn {  
+            left: 10px;  
+        }  
+        .full-screen-container .next-btn {  
+            right: 10px;  
+        }  
+        .delete-btn, .edit-btn {  
+            background-color: red;  
+            color: white;  
+            border: none;  
+            padding: 5px 10px;  
+            font-size: 12px;  
+            border-radius: 4px;  
+            cursor: pointer;  
+            margin-top: 5px;  
+        }  
+        .edit-btn {  
+            background-color: #ff9900;  
+        }  
+    </style>  
+</head>  
+<body>  
+  
+<div class="menu">  
+    <a href="#" onclick="showGallery()">Gambar Tersimpan</a>  
+</div>  
+  
+<div class="container">  
+    <h1>Website Penyimpanan Gambar</h1>  
+    <input type="file" id="imageInput" accept="image/*">  
+    <button class="upload-btn" onclick="saveImage()">Simpan Gambar</button>  
+    <div id="gallery" class="gallery"></div>  
+</div>  
+  
+<!-- Tampilan gambar layar penuh -->  
+<div id="fullScreenContainer" class="full-screen-container" onclick="closeFullScreen()">  
+    <button class="close-btn" onclick="closeFullScreen()">×</button>  
+    <button class="prev-btn" onclick="changeImage(-1)">&#10094;</button>  
+    <button class="next-btn" onclick="changeImage(1)">&#10095;</button>  
+    <img id="fullScreenImage" src="" alt="Gambar besar">  
+</div>  
+  
+<script>  
+    let currentImageIndex = 0;  
+  
+    // Fungsi untuk menyimpan gambar ke localStorage  
+    function saveImage() {  
+        const fileInput = document.getElementById('imageInput');  
+        const file = fileInput.files[0];  
+          
+        if (file) {  
+            const reader = new FileReader();  
+  
+            reader.onload = function (e) {  
+                // Mengambil data gambar dalam bentuk Base64  
+                const imgData = e.target.result;  
+  
+                // Mengambil data gambar yang sudah disimpan di localStorage (jika ada)  
+                let storedImages = JSON.parse(localStorage.getItem('images')) || [];  
+  
+                // Menambahkan gambar baru ke dalam array  
+                storedImages.push(imgData);  
+  
+                // Menyimpan ulang array gambar ke localStorage  
+                localStorage.setItem('images', JSON.stringify(storedImages));  
+  
+                // Menampilkan gambar di gallery  
+                displayImages();  
+            }  
+  
+            reader.readAsDataURL(file);  
+        } else {  
+            alert("Silakan pilih gambar untuk diunggah.");  
+        }  
+    }  
+  
+    // Fungsi untuk menampilkan gambar yang tersimpan di localStorage  
+    function displayImages() {  
+        const gallery = document.getElementById('gallery');  
+        gallery.innerHTML = '';  // Menghapus semua gambar yang ada sebelumnya  
+  
+        // Mengambil data gambar dari localStorage  
+        let storedImages = JSON.parse(localStorage.getItem('images')) || [];  
+  
+        // Menampilkan setiap gambar di gallery  
+        storedImages.forEach((imgData, index) => {  
+            const imgElement = document.createElement('img');  
+            imgElement.src = imgData;  
+            imgElement.alt = 'Gambar ' + (index + 1);  
+            imgElement.onclick = function () { openFullScreen(index); };  
+  
+            const deleteButton = document.createElement('button');  
+            deleteButton.textContent = 'Hapus Permanen';  
+            deleteButton.classList.add('delete-btn');  
+            deleteButton.onclick = function (e) {  
+                e.stopPropagation(); // Mencegah klik pada gambar  
+                deleteImage(index);  
+            };  
+  
+            const editButton = document.createElement('button');  
+            editButton.textContent = 'Edit';  
+            editButton.classList.add('edit-btn');  
+            editButton.onclick = function (e) {  
+                e.stopPropagation(); // Mencegah klik pada gambar  
+                editImage(index);  
+            };  
+  
+            const container = document.createElement('div');  
+            container.appendChild(imgElement);  
+            container.appendChild(deleteButton);  
+            container.appendChild(editButton);  
+  
+            gallery.appendChild(container);  
+        });  
+    }  
+  
+    // Menampilkan gambar yang sudah ada saat halaman pertama kali dimuat  
+    window.onload = displayImages;  
+  
+    // Fungsi untuk menampilkan gambar-gambar yang sudah disimpan di menu "Gambar Tersimpan"  
+    function showGallery() {  
+        const galleryContainer = document.getElementById('gallery');  
+        const storedImages = JSON.parse(localStorage.getItem('images')) || [];  
+          
+        galleryContainer.innerHTML = '';  // Menghapus isi gallery sebelumnya  
+  
+        if (storedImages.length === 0) {  
+            galleryContainer.innerHTML = '<p>Tidak ada gambar tersimpan.</p>';  
+        } else {  
+            // Menampilkan semua gambar yang sudah tersimpan  
+            storedImages.forEach((imgData, index) => {  
+                const imgElement = document.createElement('img');  
+                imgElement.src = imgData;  
+                imgElement.onclick = function () { openFullScreen(index); };  
+                galleryContainer.appendChild(imgElement);  
+            });  
+        }  
+    }  
+  
+    // Fungsi untuk membuka gambar dalam tampilan layar penuh  
+    function openFullScreen(index) {  
+        const fullScreenContainer = document.getElementById('fullScreenContainer');  
+        const fullScreenImage = document.getElementById('fullScreenImage');  
+        const storedImages = JSON.parse(localStorage.getItem('images')) || [];  
+  
+        currentImageIndex = index;  
+        fullScreenImage.src = storedImages[index];  // Set gambar yang akan ditampilkan  
+        fullScreenContainer.style.display = 'flex';  // Menampilkan tampilan layar penuh  
+    }  
+  
+    // Fungsi untuk menutup tampilan layar penuh  
+    function closeFullScreen() {  
+        const fullScreenContainer = document.getElementById('fullScreenContainer');  
+        fullScreenContainer.style.display = 'none';  // Menutup tampilan layar penuh  
+    }  
+  
+    // Fungsi untuk mengganti gambar saat di navigasi (prev/next)  
+    function changeImage(direction) {  
+        const storedImages = JSON.parse(localStorage.getItem('images')) || [];  
+        currentImageIndex += direction;  
+  
+        if (currentImageIndex < 0) {  
+            currentImageIndex = storedImages.length - 1;  
+        } else if (currentImageIndex >= storedImages.length) {  
+            currentImageIndex = 0;  
+        }  
+  
+        document.getElementById('fullScreenImage').src = storedImages[currentImageIndex];  
+    }  
+  
+    // Fungsi untuk menghapus gambar dari localStorage  
+    function deleteImage(index) {  
+        let storedImages = JSON.parse(localStorage.getItem('images')) || [];  
+          
+        // Menghapus gambar dari array  
+        storedImages.splice(index, 1);  
+          
+        // Menyimpan kembali data gambar yang telah diperbarui ke localStorage  
+        localStorage.setItem('images', JSON.stringify(storedImages));  
+          
+        // Menampilkan ulang gambar yang tersimpan  
+        displayImages();  
+    }  
+  
+    // Fungsi untuk mengedit gambar
+    function editImage(index) {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        
+        // Ketika file gambar dipilih
+        fileInput.onchange = function() {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    // Mengambil data gambar baru dalam bentuk Base64
+                    const imgData = e.target.result;
+
+                    // Mengambil data gambar yang ada di localStorage
+                    let storedImages = JSON.parse(localStorage.getItem('images')) || [];
+                    
+                    // Mengganti gambar yang ada dengan gambar baru
+                    storedImages[index] = imgData;
+                    
+                    // Menyimpan gambar yang telah diperbarui ke localStorage
+                    localStorage.setItem('images', JSON.stringify(storedImages));
+
+                    // Menampilkan ulang gambar yang telah diperbarui
+                    displayImages();
+                };
+
+                reader.readAsDataURL(file);
+            }
+        };
+
+        // Membuka dialog pemilihan file gambar
+        fileInput.click();
+    }
+</script>
+
+</body>
+</html>
